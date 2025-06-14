@@ -1,0 +1,7 @@
+pandas
+kafka-python
+minio
+scikit-learn
+joblib
+streamlit
+requests
