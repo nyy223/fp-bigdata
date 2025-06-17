@@ -21,7 +21,8 @@ Masalah: Penentuan harga listing secara manual sering kali tidak akurat, menyeba
 
 
 ## Workflow
-![Screenshot 2025-06-17 224028](https://github.com/user-attachments/assets/b5adfad6-d8b0-4014-8996-8e398f965ce7)
+![image](https://github.com/user-attachments/assets/110265cc-0681-4001-884c-750da6afba18)
+
 
 
 ## Teknologi yang Digunakan
