@@ -1,17 +1,16 @@
-# Final Project Kriptografi - Digital Signature
+# Final Project Big Data - Airbnb Price Prediction
 Proyek ini mensimulasikan skenario nyata di mana sebuah platform penyewaan properti seperti Airbnb menghadapi tantangan dalam menentukan harga listing secara optimal. Kami mengusulkan solusi berbasis arsitektur Data Lakehouse dengan menggunakan machine learning dan dashboard interaktif untuk merekomendasikan harga listing secara akurat.
 
 ## Anggota Kelompok 5
 
-| No | Nama Anggota        | NRP           | Jobdesc                          |
-|----|---------------------|---------------|----------------------------------|
-| 1. | M. Abhinaya         | 5027231011    | Backend                          |
-| 2. | Aswalia Novitriasari| 5027231012    | Frontend                         |
-| 3. | Ricko Mianto        | 5027231031    | Backend                          |
-| 4. | Agnes Zenobia G P   | 5027231034    | Frontend                         |
-| 5. | Nayla Raissa A      | 5027231054    | Frontend                         |
-| 6. | Aisha Ayya R        | 5027231056    | FrontEnd                         |
-| 7. | Aisyah Rahmasari    | 5027231072    | FrontEnd                         |
+| No | Nama Anggota        | NRP           |
+|----|---------------------|---------------|
+| 1. | Chelsea Vania H     | 5027231054    |
+| 2. | Salsabila Rahmah    | 5027231056    | 
+| 3. | Nayla Raissa A      | 5027231054    |
+| 4. | Aisha Ayya R        | 5027231056    | 
+| 5. | Aisyah Rahmasari    | 5027231072    |
+
 
 ## Latar Belakang Masalah
 Industri: E-commerce / Penyewaan Properti
@@ -20,11 +19,13 @@ Masalah: Penentuan harga listing secara manual sering kali tidak akurat, menyeba
 - Harga terlalu rendah → potensi kerugian bagi pemilik properti
 - Tidak adanya standarisasi penilaian harga berdasarkan fitur properti
 
+
 ## Workflow
 ![Screenshot 2025-06-17 224028](https://github.com/user-attachments/assets/b5adfad6-d8b0-4014-8996-8e398f965ce7)
 ![Screenshot 2025-06-17 224028](https://github.com/user-attachments/assets/b5adfad6-d8b0-4014-8996-8e398f965ce7)
 ![image](https://github.com/user-attachments/assets/d14c5c7d-9e5f-4a28-b259-86e59e6cf19c)
 ![image](https://github.com/user-attachments/assets/d14c5c7d-9e5f-4a28-b259-86e59e6cf19c)
+
 
 ## Teknologi yang Digunakan
 | Komponen           | Teknologi               |
