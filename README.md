@@ -19,21 +19,73 @@ Masalah: Penentuan harga listing secara manual sering kali tidak akurat, menyeba
 - Harga terlalu rendah → potensi kerugian bagi pemilik properti
 - Tidak adanya standarisasi penilaian harga berdasarkan fitur properti
 
+## Tujuan Projek
+- **Membangun Sistem Prediksi Harga Listing Otomatis:**
+Mengembangkan model machine learning berbasis big data untuk memprediksi harga listing properti Airbnb secara akurat dan otomatis.
+
+- **Mengimplementasikan Arsitektur Data Lakehouse:**
+Menerapkan arsitektur Lakehouse yang terdiri dari Kafka (streaming ingestion), MinIO (object storage sebagai data lake), dan Apache Spark (untuk analisis dan pemodelan).
+
+- **Menyediakan Alur Pemrosesan Data Terintegrasi:**
+Mendesain dan membangun pipeline data streaming dan batch yang mengalirkan data dari dataset mentah ke Kafka, menyimpannya di MinIO, dan memprosesnya di Apache Spark untuk keperluan analisis dan training model.
+
+- **Mengintegrasikan Visualisasi Interaktif untuk End User:**
+Menyediakan antarmuka berbasis Streamlit agar pengguna (misalnya pemilik properti) dapat mengakses prediksi harga secara langsung melalui dashboard yang informatif dan mudah digunakan.
+
+- **Meningkatkan Efisiensi dan Akurasi Penentuan Harga:**
+Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasis data yang dapat diskalakan, transparan, dan berbasis fitur properti aktual.
+
+
+## Dataset
+- Nama Dataset: [Airbnb Listings Reviews](https://www.kaggle.com/datasets/mysarahmadbhat/airbnb-listings-reviews)
+- Ukuran: 414,32 MB
+- Format: CSV
+- Usability Score: 9.41
+- Deskripsi: Data Airbnb untuk lebih dari 250.000 listing di 10 kota besar, mencakup informasi tentang host, harga, lokasi, dan tipe kamar, serta lebih dari 5 juta ulasan historis.
+
+
+### Alasan Pemilihan Dataset
+- Mencakup lebih dari 250.000 listing Airbnb dari 10 kota besar.
+- Memuat informasi penting seperti harga, lokasi, jenis kamar, dan ulasan pengguna.
+- Tersedia lebih dari 5 juta data ulasan historis untuk analisis perilaku pengguna.
+- Cocok untuk membangun model prediksi harga listing berbasis machine learning.
+- Ukuran dan kompleksitas dataset sesuai untuk implementasi arsitektur Big Data (Kafka, MinIO, Spark).
+- Dataset bersifat publik dan bebas digunakan untuk keperluan analisis dan pengembangan model.
+
 
 ## Workflow
 ![image](https://github.com/user-attachments/assets/110265cc-0681-4001-884c-750da6afba18)
 
 
-
 ## Teknologi yang Digunakan
 
-| Komponen           | Teknologi               |
-|--------------------|-------------------------|
-| Penyimpanan Data   | MinIO                   |
-| Pemrosesan Data    | Pandas, Scikit-learn    |
-| Dashboard          | Streamlit               |
-| Orkestrasi         | Docker Compose          |
-| Model ML           | Scikit-learn + Joblib   |
+| **Komponen**        | **Teknologi**            | **Deskripsi Singkat**  |
+|---------------------|--------------------------|------------------------|
+| Penyimpanan Data     | MinIO                    | Object storage berbasis S3-compatible yang digunakan untuk menyimpan dataset mentah dan hasil transformasi. |
+| Pemrosesan Data      | Pandas, Scikit-learn     | Digunakan untuk eksplorasi data, pembersihan, transformasi, dan pelatihan model ML.    |
+| Dashboard            | Streamlit                | Framework Python untuk membangun antarmuka visual interaktif berbasis web.             |
+| Orkestrasi           | Docker Compose           | Mengelola dan menjalankan layanan dalam container secara terkoordinasi.                |
+| Model ML             | Scikit-learn + Joblib    | Scikit-learn untuk pelatihan model dan Joblib untuk menyimpan/memuat model yang telah dilatih. |
+
+## Struktur Projek
+```
+.
+├── minio_data/ 
+├── src/ 
+│ ├── dashboard/
+│ │   └── app.py
+│ ├── data_ingestion/ 
+│ │   ├── consumer.py 
+│ │   └── producer.py 
+│ ├── ml_training/
+│ │   └── train_model.py
+│ └── processing/ 
+│     └── processor.py 
+├── .gitignore 
+├── docker-compose.yml
+├── README.md 
+└── requirements.txt
+```
 
 ## Cara Menjalankan Projek
 
