@@ -53,7 +53,7 @@ Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasi
 - Dataset bersifat publik dan bebas digunakan untuk keperluan analisis dan pengembangan model.
 
 
-## Workflow
+## Arsitektur
 ![image](https://github.com/user-attachments/assets/110265cc-0681-4001-884c-750da6afba18)
 
 
@@ -90,59 +90,106 @@ Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasi
 └── requirements.txt
 ```
 
+## Workflow
+### 1. Training Model
+`src/ml_training/train_model.py`
+- Input: Listings.csv (250.000 baris pertama)
+- Proses:
+  - Membersihkan & mempersiapkan data listing
+  - Melatih RandomForestRegressor dalam sebuah Pipeline
+- Output: price_prediction_model.joblib
+- Disimpan di: Bucket models (MinIO)
+### 2. Streaming Data **Review**
+**a. Producer**
+`src/data_ingestion/producer.py`
+- Input: Reviews.csv (15.000 ulasan pertama)
+- Proses: Mengirim ulasan ke Kafka (airbnb-reviews) secara bertahap
+- Output: Aliran pesan Kafka
+  
+**b. Consumer**
+`src/data_ingestion/consumer.py`
+- Input: Kafka (airbnb-reviews)
+- Proses: Menyimpan setiap pesan ke file JSON
+- Output: File JSON
+- Disimpan di: Bucket bronze (MinIO)
+### 3. Processing & Prediction
+`src/processing/processor.py`
+- Input:
+  - File JSON dari bucket bronze
+  - Model dari models
+  - Lookup ke Listings.csv
+- Proses:
+  - Menggabungkan ulasan + data listing
+  - Prediksi harga dengan model
+- Output: File JSON terstruktur
+- Disimpan di: Bucket gold (MinIO)
+### 4. Interactive Dashboard
+`src/dashboard/app.py`
+- Input:
+  - Model terlatih (models)
+  - Input pengguna (via form web)
+- Proses:
+  - Prediksi harga berdasarkan input
+  - Konversi USD → IDR
+- Output: Tampilan harga prediksi di web
+  
 ## Cara Menjalankan Projek
+Pastikan **Docker** dan **Docker Compose** sudah terinstal di perangkat Anda.
+### 1. Clone Repositori 
+```
+git clone https://github.com/nyy223/fp-bigdata.git
+cd fp-bigdata
+```
+### 2. Jalankan Docker
+```
+docker-compose up --build
+```
+### 3. Akses Dashboard dan MinIO
+Setelah semua container aktif:
+- Dashboard Prediksi: `http://localhost:8501`
+  
+  Dashboard ini memungkinkan pengguna memasukkan atribut-atribut properti Airbnb untuk memprediksi harga sewa harian. Input dibagi dalam dua kategori utama:
 
-### 1. Jalankan Docker
-```
-docker-compose up -d
-```
+   **🏠 Bagian 1: Listing Details**
+   Fokus pada karakteristik properti yang disewakan.
+  | Parameter               | Tipe Input      | Deskripsi                                                                                  |
+  |-------------------------|-----------------|---------------------------------------------------------------------------------------------|
+  | Neighbourhood           | Dropdown        | Lokasi properti. Harga sangat bergantung pada area. Model belajar pola per lingkungan.     |
+  | Property Type           | Dropdown        | Jenis properti (Apartment, House, Barn, dll). Mempengaruhi nilai dan harga sewa.           |
+  | Room Type               | Dropdown        | Jenis ruang: Entire place (mahal), Private room, Shared room (murah).                      |
+  | Accommodates            | Numeric (±)     | Jumlah maksimal tamu. Semakin banyak kapasitas → harga makin tinggi.                       |
+  | Number of Bedrooms      | Numeric (±)     | Jumlah kamar tidur yang tersedia. Menunjukkan ukuran dan kapasitas properti.               |
+  | Overall Rating (0–100)  | Slider          | Skor ulasan keseluruhan dari tamu. Skor tinggi → harga bisa premium.                       |
+  | Cleanliness Score (0–10)| Slider          | Seberapa bersih properti dinilai oleh tamu. Faktor penting untuk penilaian kualitas.       |
+  | Location Score (0–10)   | Slider          | Penilaian lokasi (akses, keamanan, kedekatan wisata). Skor tinggi → harga naik.            |
+  | Host’s Total Listings   | Numeric (±)     | Jumlah properti yang dikelola host. Lebih banyak → lebih profesional.                      |
 
-### 2. Install library
-```
-pip install -r requirements.txt
-```
+  **👤 Bagian 2: Host Details**
+  | Parameter                 | Tipe Input           | Deskripsi                                                                                  |
+  |---------------------------|----------------------|---------------------------------------------------------------------------------------------|
+  | Is the Host a Superhost?  | Radio Button (Yes/No)| Status Superhost menunjukkan host berkualitas tinggi. Meningkatkan kepercayaan & harga.    |
+  | Host Response Rate (%)    | Slider (0–100%)      | Persentase respon terhadap calon tamu. Responsif → diasumsikan lebih profesional.          |
 
-### 3. Akses MinIO Console 
-a. Buka di browser http://localhost:9001
-b. Login 
-c. Buat tiga bucket, bronze, gold, dan medal
-![image](https://github.com/user-attachments/assets/0ceba1a2-0392-4a22-b9c0-094af7734325)
+  ![image](https://github.com/user-attachments/assets/c917fd56-0811-44c0-ba4b-daeaf0e95d45)
 
+  **🔘 Tombol Predict Price**
 
-### 4. Jalankan Kafka
-#### a. Jalankan Producer.py
-```
-python src/data_ingestion/producer.py
-```
-![image](https://github.com/user-attachments/assets/87da4b51-19e9-45c1-8e26-7a7f20285d0e)
+  Setelah semua input dimasukkan, klik tombol ini untuk mengirim data ke model ML dan mendapatkan prediksi harga sewa harian dalam USD dan IDR.
+  <img width="1337" alt="Screenshot 2025-06-19 at 20 14 46" src="https://github.com/user-attachments/assets/bc03cba6-e86e-419c-9d68-16bb72880853" />
 
-#### b. Jalankan consumer.py
-```
-python src/data_ingestion/consumer.py
-```
-![image](https://github.com/user-attachments/assets/747325ae-32fa-4dea-aef4-c958f861de8f)
+- MinIO Console: `http://localhost:9001`
+> Login: minioadmin / minioadmin
 
-#### c. Jalankan processor.py
-```
-python src/processing/processor.py
-```
-![image](https://github.com/user-attachments/assets/8ae7adf6-13d6-4aad-a683-d93cddf956f3)
-
-
-### 5. Train Model
-```
-python src/ml_training/train_model.py
-```
-cek apakah ada price_prediction_model.joblib di dalam bucket models
 ![image](https://github.com/user-attachments/assets/2e714201-a225-4c25-9d16-a65a20383742)
 
+### 4. Hentikan Projek
+Tekan Ctrl + C untuk menghentikan proyek. Jika ingin memulai kembali,
 
-### Jalankan Streamlit
-```
-streamlit run src/dashboard/app.py 
-```
-![image](https://github.com/user-attachments/assets/c917fd56-0811-44c0-ba4b-daeaf0e95d45)
+`docker-compose up`
 
+Untuk mengehentikan dan menghapus container serta menghapus seluruh data, 
+
+`docker-compose down -v`
 
 ## Manfaat yang Didapat
 - Prediksi harga listing yang lebih adil dan berbasis data
