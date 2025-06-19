@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
@@ -26,11 +27,106 @@ services:
     image: minio/minio:latest
     container_name: minio
     ports:
-      - "9000:9000"  # API port
-      - "9001:9001"  # Console UI port
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - ./minio_data:/data
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # --- APPLICATION SERVICES ---
+  
+  model-training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: model-training
+    volumes:
+      - .:/app
+    command: python src/ml_training/train_model.py
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: producer
+    volumes:
+      - .:/app
+    command: >
+      bash -c "
+        echo 'Waiting for Kafka internal port to be healthy...' &&
+        while ! nc -z kafka 29092; do   # <-- PERUBAHAN DI SINI
+          sleep 1
+        done
+        echo 'Kafka is up - executing producer...'
+        python src/data_ingestion/producer.py
+      "
+    depends_on:
+      - kafka
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: consumer
+    volumes:
+      - .:/app
+    command: >
+      bash -c "
+        echo 'Waiting for Kafka internal port to be healthy...' &&
+        while ! nc -z kafka 29092; do   # <-- PERUBAHAN DI SINI
+          sleep 1
+        done
+        echo 'Kafka is up - executing consumer...'
+        python src/data_ingestion/consumer.py
+      "
+    depends_on:
+      kafka:
+        condition: service_started
+      minio:
+        condition: service_healthy
+
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: processor
+    volumes:
+      - .:/app
+    command: >
+      bash -c "echo 'Waiting for model training to complete...' && 
+               sleep 10 && 
+               while true; do 
+                 python src/processing/processor.py; 
+                 echo 'Processor run finished. Waiting 60 seconds...'; 
+                 sleep 60; 
+               done"
+    depends_on:
+      model-training:
+        condition: service_completed_successfully
+      consumer:
+        condition: service_started
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dashboard
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"
+    command: streamlit run src/dashboard/app.py --server.port 8501 --server.address 0.0.0.0
+    depends_on:
+      model-training:
+        condition: service_completed_successfully

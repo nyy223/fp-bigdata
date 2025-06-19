@@ -7,7 +7,7 @@ import os
 
 def process_and_predict():
     """Processes raw data, predicts prices, and stores results in the gold bucket."""
-    client = Minio("localhost:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
+    client = Minio("minio:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
 
     # --- 1. Load Model from MinIO ---
     print("Loading model from MinIO...")
@@ -107,7 +107,6 @@ def process_and_predict():
                 length=len(json_bytes),
                 content_type='application/json'
             )
-            print(f"Processed review for listing {listing_id}. Saved to '{gold_bucket}'. Predicted price: ${predicted_price:.2f}")
             
             # Optional: Delete from bronze after processing
             client.remove_object(bronze_bucket, review_obj.object_name)

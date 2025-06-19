@@ -15,7 +15,7 @@ def train_and_save_model():
     file_path = os.path.join('data', 'Listings.csv')
     try:
         # Fixed: Added encoding='latin-1' to handle UnicodeDecodeError
-        df = pd.read_csv(file_path, low_memory=False, encoding='latin-1')
+        df = pd.read_csv(file_path, low_memory=False, encoding='latin-1', nrows=250000)
     except FileNotFoundError:
         print(f"Error: {file_path} not found.")
         return
@@ -83,7 +83,7 @@ def train_and_save_model():
     print(f"Model training complete. R^2 Score: {score:.2f}")
 
     # --- 5. Save Model to MinIO ---
-    client = Minio("localhost:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
+    client = Minio("minio:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
     bucket_name = "models"
     
     # Ensure bucket exists

@@ -7,7 +7,7 @@ import os
 def run_kafka_producer():
     """Reads review data and sends it to a Kafka topic."""
     producer = KafkaProducer(
-        bootstrap_servers='localhost:9092',
+        bootstrap_servers='kafka:29092',
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
     
@@ -19,14 +19,13 @@ def run_kafka_producer():
         return
 
     print("Starting to send review data to Kafka topic 'airbnb-reviews'...")
-    for index, row in df.iterrows():
+    for index, row in df.head(15000).iterrows():
         message = row.to_dict()
         producer.send('airbnb-reviews', value=message)
-        print(f"Sent review ID: {message['review_id']}")
-        time.sleep(1) # Simulates a 1-second delay between reviews
+        time.sleep(0.05) # Simulates a 0.05-second delay between reviews
 
     producer.flush()
-    print("Finished sending all reviews.")
+    print("Finished sending all 15,000 reviews.")
 
 if __name__ == "__main__":
     run_kafka_producer()

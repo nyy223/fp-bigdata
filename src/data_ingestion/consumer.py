@@ -7,14 +7,14 @@ def run_kafka_consumer():
     """Consumes data from Kafka and stores it in MinIO bronze bucket."""
     consumer = KafkaConsumer(
         'airbnb-reviews',
-        bootstrap_servers='localhost:9092',
+        bootstrap_servers='kafka:29092',
         auto_offset_reset='earliest', # Start reading from the beginning of the topic
         group_id='airbnb-review-savers',
         value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )
 
     client = Minio(
-        "localhost:9000",
+        "minio:9000",
         access_key="minioadmin",
         secret_key="minioadmin",
         secure=False
@@ -44,7 +44,6 @@ def run_kafka_consumer():
             length=len(json_bytes),
             content_type='application/json'
         )
-        print(f"Saved {file_name} to MinIO bucket '{bucket_name}'.")
 
 if __name__ == "__main__":
     run_kafka_consumer()

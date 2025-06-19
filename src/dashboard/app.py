@@ -16,7 +16,7 @@ st.set_page_config(layout="wide", page_title="Airbnb Price Predictor")
 def get_model_from_minio():
     """Connects to MinIO and downloads the trained model."""
     try:
-        client = Minio("localhost:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
+        client = Minio("minio:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
         model_object = client.get_object("models", "price_prediction_model.joblib")
         model_file = io.BytesIO(model_object.read())
         model = joblib.load(model_file)
