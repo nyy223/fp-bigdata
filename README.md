@@ -71,6 +71,7 @@ Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasi
 ## Struktur Projek
 ```
 .
+├── data/
 ├── minio_data/ 
 ├── src/ 
 │ ├── dashboard/
@@ -84,6 +85,7 @@ Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasi
 │     └── processor.py 
 ├── .gitignore 
 ├── docker-compose.yml
+├── Dockerfile
 ├── README.md 
 └── requirements.txt
 ```
