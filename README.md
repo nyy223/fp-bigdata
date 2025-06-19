@@ -59,13 +59,14 @@ Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasi
 
 ## Teknologi yang Digunakan
 
-| **Komponen**        | **Teknologi**            | **Deskripsi Singkat**  |
-|---------------------|--------------------------|------------------------|
-| Penyimpanan Data     | MinIO                    | Object storage berbasis S3-compatible yang digunakan untuk menyimpan dataset mentah dan hasil transformasi. |
-| Pemrosesan Data      | Pandas, Scikit-learn     | Digunakan untuk eksplorasi data, pembersihan, transformasi, dan pelatihan model ML.    |
-| Dashboard            | Streamlit                | Framework Python untuk membangun antarmuka visual interaktif berbasis web.             |
-| Orkestrasi           | Docker Compose           | Mengelola dan menjalankan layanan dalam container secara terkoordinasi.                |
-| Model ML             | Scikit-learn + Joblib    | Scikit-learn untuk pelatihan model dan Joblib untuk menyimpan/memuat model yang telah dilatih. |
+| **Komponen**            | **Teknologi**               | **Deskripsi Singkat**                                                                                                  |
+| ------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Penyimpanan Data    | MinIO                   | Object storage berbasis S3-compatible untuk menyimpan dataset mentah (bronze), hasil olahan (gold), dan model ML. |
+| Streaming Data      | Apache Kafka            | Platform streaming terdistribusi untuk menangani aliran data review secara real-time (disimulasikan).              |
+| Pemrosesan Data     | Pandas                  | Digunakan untuk manipulasi, pembersihan, dan transformasi data dalam format DataFrame.                           |
+| Model ML            | Scikit-learn + Joblib   | Scikit-learn untuk pre-processing dan pelatihan model. Joblib untuk menyimpan/memuat model yang telah dilatih.     |
+| Dashboard Interaktif | Streamlit               | Framework Python untuk membangun dan menyajikan antarmuka pengguna (UI) prediktor harga berbasis web.              |
+| Orkestrasi Layanan  | Docker, Docker Compose  | Mengelola dan menjalankan semua layanan (Kafka, MinIO, Python scripts, Streamlit) dalam container secara terkoordinasi. |
 
 ## Struktur Projek
 ```
