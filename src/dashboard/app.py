@@ -1,4 +1,4 @@
-# src/dashboard/app.py (VERSI BARU + FIX PREDIKSI LOG)
+# src/dashboard/app.py (disederhanakan: hilangkan beberapa fitur dari UI)
 
 import streamlit as st
 import pandas as pd
@@ -10,8 +10,6 @@ import requests
 import numpy as np
 
 st.set_page_config(layout="wide", page_title="Airbnb Price Predictor")
-
-# --- Konfigurasi dan Fungsi ---
 
 @st.cache_data(ttl=3600)
 def get_model_from_minio():
@@ -70,7 +68,7 @@ else:
 
     with st.form("prediction_form"):
         st.header("Listing Details")
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         with col1:
             neighbourhood = st.selectbox("Neighbourhood", options=unique_neighbourhoods)
             property_type = st.selectbox("Property Type", options=unique_property_types)
@@ -79,38 +77,30 @@ else:
             accommodates = st.number_input("Accommodates (guests)", min_value=1, max_value=20, value=2, step=1)
             bedrooms = st.number_input("Number of Bedrooms", min_value=0, max_value=10, value=1, step=1)
             review_scores_rating = st.slider("Overall Rating Score (out of 100)", min_value=0, max_value=100, value=95)
-        with col3:
-            review_scores_cleanliness = st.slider("Cleanliness Score (out of 10)", min_value=0, max_value=10, value=9)
-            review_scores_location = st.slider("Location Score (out of 10)", min_value=0, max_value=10, value=9)
             host_total_listings_count = st.number_input("Host's Total Listings", min_value=1, max_value=500, value=1, step=1)
-        st.header("Host Details")
-        col_host1, col_host2 = st.columns(2)
-        with col_host1:
-            host_is_superhost_str = st.radio("Is the Host a Superhost?", ('Yes', 'No'))
-        with col_host2:
-            host_response_rate_pct = st.slider("Host Response Rate (%)", min_value=0, max_value=100, value=100)
         submitted = st.form_submit_button("Predict Price")
 
     if submitted:
         input_data = {
             'neighbourhood': [neighbourhood],'property_type': [property_type],'room_type': [room_type],
             'accommodates': [accommodates],'bedrooms': [bedrooms],'review_scores_rating': [review_scores_rating],
-            'review_scores_cleanliness': [review_scores_cleanliness],'review_scores_location': [review_scores_location],
-            'host_total_listings_count': [host_total_listings_count],'host_is_superhost': [host_is_superhost_str],
-            'host_response_rate': [host_response_rate_pct]
+            'host_total_listings_count': [host_total_listings_count],
+            # default values for removed fields
+            'host_is_superhost': [0],
+            'host_response_rate': [1.0],
+            'review_scores_cleanliness': [8.0],
+            'review_scores_location': [8.0]
         }
         input_df = pd.DataFrame.from_dict(input_data)
         st.write("---")
         st.subheader("Processing Input...")
-        input_df['host_is_superhost'] = input_df['host_is_superhost'].apply(lambda x: 1 if x == 'Yes' else 0)
-        input_df['host_response_rate'] = input_df['host_response_rate'] / 100.0
         st.write("Cleaned data sent to model:")
         st.dataframe(input_df)
 
         try:
             predicted_price_log = model.predict(input_df)[0]
             predicted_price_usd = np.expm1(predicted_price_log)
-            predicted_price_usd = max(0, predicted_price_usd)  # Hindari negatif
+            predicted_price_usd = max(0, predicted_price_usd)
             predicted_price_idr = predicted_price_usd * IDR_RATE
 
             st.subheader("🥁 Prediction Result")
