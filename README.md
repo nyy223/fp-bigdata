@@ -5,8 +5,8 @@ Proyek ini mensimulasikan skenario nyata di mana sebuah platform penyewaan prope
 
 | No | Nama Anggota        | NRP           |
 |----|---------------------|---------------|
-| 1. | Chelsea Vania H     | 5027231054    |
-| 2. | Salsabila Rahmah    | 5027231056    | 
+| 1. | Chelsea Vania H     | 5027231003    |
+| 2. | Salsabila Rahmah    | 5027231005    | 
 | 3. | Nayla Raissa A      | 5027231054    |
 | 4. | Aisha Ayya R        | 5027231056    | 
 | 5. | Aisyah Rahmasari    | 5027231072    |
