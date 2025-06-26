@@ -54,7 +54,7 @@ Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasi
 
 
 ## Arsitektur
-<img width="602" alt="Screenshot 2025-06-19 at 21 38 10" src="https://github.com/user-attachments/assets/7513610a-5e01-47de-a387-25f7ba7d8d8d" />
+<img width="762" alt="Screenshot 2025-06-26 at 21 15 41" src="https://github.com/user-attachments/assets/7d188756-6d5a-4f19-9708-395b1be6185b" />
 
 ## Teknologi yang Digunakan
 
