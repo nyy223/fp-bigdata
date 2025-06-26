@@ -1,25 +1,30 @@
+# src/dashboard/app.py (VERSI BARU)
+
 import streamlit as st
 import pandas as pd
 from minio import Minio
 import joblib
 import io
 import os
-import requests  # <-- Tambahan baru
+import requests
 
-# --- Aturan #1: set_page_config() harus menjadi perintah Streamlit pertama ---
 st.set_page_config(layout="wide", page_title="Airbnb Price Predictor")
-
 
 # --- Konfigurasi dan Fungsi ---
 
-@st.cache_resource
+# --- PERUBAHAN KRUSIAL DI SINI ---
+# Mengubah caching agar model dimuat ulang setiap 1 jam (3600 detik)
+# Ini memastikan dashboard akan mengambil model terbaru hasil retrain.
+@st.cache_data(ttl=3600)
 def get_model_from_minio():
-    """Connects to MinIO and downloads the trained model."""
+    """Connects to MinIO and downloads the trained model. Cached for 1 hour."""
+    st.info("Fetching the latest model from storage...") # Tambahkan notifikasi
     try:
         client = Minio("minio:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
         model_object = client.get_object("models", "price_prediction_model.joblib")
         model_file = io.BytesIO(model_object.read())
         model = joblib.load(model_file)
+        st.success("Latest model loaded successfully!") # Tambahkan notifikasi
         return model
     except Exception as e:
         st.error(f"Fatal Error: Could not load model from MinIO. Details: {e}")

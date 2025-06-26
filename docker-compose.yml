@@ -1,3 +1,5 @@
+# docker-compose.yml (VERSI BARU)
+
 version: '3.8'
 
 services:
@@ -41,19 +43,7 @@ services:
       timeout: 10s
       retries: 5
 
-  # --- APPLICATION SERVICES ---
-  
-  model-training:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: model-training
-    volumes:
-      - .:/app
-    command: python src/ml_training/train_model.py
-    depends_on:
-      minio:
-        condition: service_healthy
+  # --- Layanan model-training SUDAH DIHAPUS ---
 
   producer:
     build:
@@ -64,12 +54,10 @@ services:
       - .:/app
     command: >
       bash -c "
-        echo 'Waiting for Kafka internal port to be healthy...' &&
-        while ! nc -z kafka 29092; do   # <-- PERUBAHAN DI SINI
-          sleep 1
-        done
-        echo 'Kafka is up - executing producer...'
-        python src/data_ingestion/producer.py
+      echo 'Waiting for Kafka...' &&
+      while ! nc -z kafka 29092; do sleep 1; done
+      echo 'Kafka is up - executing producer...'
+      python src/data_ingestion/producer.py
       "
     depends_on:
       - kafka
@@ -83,12 +71,10 @@ services:
       - .:/app
     command: >
       bash -c "
-        echo 'Waiting for Kafka internal port to be healthy...' &&
-        while ! nc -z kafka 29092; do   # <-- PERUBAHAN DI SINI
-          sleep 1
-        done
-        echo 'Kafka is up - executing consumer...'
-        python src/data_ingestion/consumer.py
+      echo 'Waiting for Kafka...' &&
+      while ! nc -z kafka 29092; do sleep 1; done
+      echo 'Kafka is up - executing consumer...'
+      python src/data_ingestion/consumer.py
       "
     depends_on:
       kafka:
@@ -104,18 +90,16 @@ services:
     volumes:
       - .:/app
     command: >
-      bash -c "echo 'Waiting for model training to complete...' && 
-               sleep 10 && 
-               while true; do 
-                 python src/processing/processor.py; 
-                 echo 'Processor run finished. Waiting 60 seconds...'; 
-                 sleep 60; 
-               done"
-    depends_on:
-      model-training:
-        condition: service_completed_successfully
-      consumer:
-        condition: service_started
+      bash -c "echo 'Starting processor loop...' &&
+      sleep 15 && # Beri waktu consumer untuk mulai bekerja
+      while true; do
+        python src/processing/processor.py;
+        echo 'Processor run finished. Waiting 30 seconds...';
+        sleep 30; # <-- Interval pengecekan diperpendek
+      done"
+    depends_on: # <-- Dependensi diubah
+      - consumer
+      - minio
 
   dashboard:
     build:
@@ -127,6 +111,5 @@ services:
     ports:
       - "8501:8501"
     command: streamlit run src/dashboard/app.py --server.port 8501 --server.address 0.0.0.0
-    depends_on:
-      model-training:
-        condition: service_completed_successfully
+    depends_on: # <-- Dependensi diubah
+      - minio

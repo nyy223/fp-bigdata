@@ -1,3 +1,5 @@
+# src/processing/processor.py (VERSI FINAL & BENAR)
+
 import pandas as pd
 from minio import Minio
 import json
@@ -5,115 +7,113 @@ import io
 import joblib
 import os
 
-def process_and_predict():
-    """Processes raw data, predicts prices, and stores results in the gold bucket."""
-    client = Minio("minio:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
+# --- KONFIGURASI ---
+MINIO_CLIENT = Minio("minio:9000", access_key="minioadmin", secret_key="minioadmin", secure=False)
+BRONZE_BUCKET = "bronze"
+GOLD_BUCKET = "gold"
+MODELS_BUCKET = "models"
+MODEL_NAME = "price_prediction_model.joblib"
 
-    # --- 1. Load Model from MinIO ---
-    print("Loading model from MinIO...")
+# --- FUNGSI UTAMA ---
+def main():
+    # Muat data dan model terlebih dahulu
     try:
-        model_object = client.get_object("models", "price_prediction_model.joblib")
-        model_file = io.BytesIO(model_object.read())
-        model = joblib.load(model_file)
-        print("Model loaded successfully.")
+        listings_df = pd.read_csv(os.path.join('data', 'Listings.csv'), low_memory=False, encoding='latin-1')
+        # --- PERBAIKAN KUNCI DI SINI ---
+        listings_df['listing_id'] = listings_df['listing_id'].astype(str) # Gunakan nama kolom yang benar
+        
+        model_object = MINIO_CLIENT.get_object(MODELS_BUCKET, MODEL_NAME)
+        model_pipeline = joblib.load(io.BytesIO(model_object.read()))
     except Exception as e:
-        print(f"Error loading model: {e}. Did you run the training script first?")
+        print(f"FATAL ERROR: Could not load initial data or model. Is model trained? Details: {e}")
         return
-        
-    # --- 2. Load Static Listing Data ---
-    # Added encoding='latin-1' to match the training script
-    listings_df = pd.read_csv(os.path.join('data', 'Listings.csv'), low_memory=False, encoding='latin-1')
-    listings_df['listing_id'] = listings_df['listing_id'].astype(str)
+
+    # Buat bucket gold jika belum ada
+    if not MINIO_CLIENT.bucket_exists(GOLD_BUCKET):
+        MINIO_CLIENT.make_bucket(GOLD_BUCKET)
+
+    # Periksa file baru di bronze
+    raw_reviews_objects = list(MINIO_CLIENT.list_objects(BRONZE_BUCKET, recursive=True))
+    if not raw_reviews_objects:
+        print("Bronze bucket is empty. Nothing to process.")
+        return
     
-    # --- 3. Process each file in Bronze bucket ---
-    bronze_bucket = "bronze"
-    gold_bucket = "gold"
-    if not client.bucket_exists(gold_bucket):
-        client.make_bucket(gold_bucket)
-
-    print(f"Checking for new reviews in '{bronze_bucket}' bucket...")
-    raw_reviews = client.list_objects(bronze_bucket, recursive=True)
+    print(f"Found {len(raw_reviews_objects)} new reviews. Starting processing and retraining cycle.")
     
-    for review_obj in raw_reviews:
-        # Get raw review data
-        review_file = client.get_object(bronze_bucket, review_obj.object_name)
-        review_data = json.load(review_file)
-        listing_id = str(review_data['listing_id'])
-        
-        # Find corresponding listing
-        listing_info = listings_df[listings_df['listing_id'] == listing_id]
-        
-        if listing_info.empty:
-            print(f"Listing ID {listing_id} not found. Skipping review {review_data['review_id']}.")
-            continue
-
-        # Prepare data for prediction (must match training format)
-        prediction_input = listing_info.copy()
-        
-        # --- START: REPLICATE PRE-PROCESSING FROM TRAINING SCRIPT ---
-        # This is crucial! The data for prediction must have the exact same format
-        # as the data used for training.
-        
-        # 1. Clean host_response_rate
-        if 'host_response_rate' in prediction_input.columns:
-            # Handle potential NaNs before converting to string
-            prediction_input['host_response_rate'] = prediction_input['host_response_rate'].fillna('0%').astype(str).str.replace('%', '').astype(float) / 100
-
-        # 2. Convert boolean host_is_superhost
-        if 'host_is_superhost' in prediction_input.columns:
-            prediction_input['host_is_superhost'] = prediction_input['host_is_superhost'].apply(lambda x: 1 if x == 't' else 0)
-        
-        # --- END: REPLICATE PRE-PROCESSING ---
-
-        # Predict
+    batch_data_for_training = []
+    
+    # --- 1. PROSES SEMUA FILE DARI BRONZE KE GOLD ---
+    for review_obj in raw_reviews_objects:
         try:
-            # Get feature names from the trained pipeline
-            # This makes the code robust against column order changes
-            feature_columns = [
-                'host_response_rate', 'host_is_superhost', 'host_total_listings_count',
-                'neighbourhood', 'property_type', 'room_type', 'accommodates',
-                'bedrooms', 'review_scores_rating', 'review_scores_cleanliness',
-                'review_scores_location'
-            ]
+            review_file = MINIO_CLIENT.get_object(BRONZE_BUCKET, review_obj.object_name)
+            review_data = json.load(review_file)
+            listing_id = str(review_data['listing_id'])
             
-            # Ensure all feature columns exist and fill NaNs in numeric columns
-            for col in feature_columns:
-                if col not in prediction_input.columns:
-                    # If a column is missing, add it with a default value (e.g., 0 or mean)
-                    prediction_input[col] = 0 
+            # --- PERBAIKAN KUNCI DI SINI ---
+            listing_info = listings_df[listings_df['listing_id'] == listing_id] # Gunakan nama kolom yang benar
+            if listing_info.empty:
+                continue
+
+            # Siapkan data untuk prediksi (tanpa menyentuh target)
+            prediction_input = listing_info.copy()
+            if 'host_response_rate' in prediction_input.columns:
+                prediction_input['host_response_rate'] = prediction_input['host_response_rate'].astype(str).str.replace('%', '').astype(float) / 100
+            if 'host_is_superhost' in prediction_input.columns:
+                prediction_input['host_is_superhost'] = prediction_input['host_is_superhost'].apply(lambda x: 1 if x == 't' else 0)
             
-            prediction_input.fillna(0, inplace=True) # Simple NaN handling for prediction
+            # Buat prediksi
+            features = list(model_pipeline.named_steps['preprocessor'].transformers_[0][2]) + \
+                       list(model_pipeline.named_steps['preprocessor'].transformers_[1][2])
+            predicted_price = model_pipeline.predict(prediction_input[features])[0]
 
-            predicted_price = model.predict(prediction_input[feature_columns])[0]
-
-            # --- 4. Create enriched output ---
+            # Siapkan data output untuk bucket GOLD
             output_data = {
                 "review_info": review_data,
-                "listing_info": listing_info.iloc[0].to_dict(),
+                "listing_info": json.loads(listing_info.iloc[0].to_json()),
                 "prediction": {
-                    "predicted_optimal_price": round(predicted_price, 2),
+                    "predicted_price_usd": round(predicted_price, 2),
                     "current_price_str": listing_info.iloc[0]['price']
                 }
             }
             
-            # --- 5. Save to Gold bucket ---
-            output_filename = f"processed_{review_data['review_id']}.json"
-            json_bytes = json.dumps(output_data, indent=4, default=str).encode('utf-8')
-
-            client.put_object(
-                gold_bucket,
-                output_filename,
-                data=io.BytesIO(json_bytes),
-                length=len(json_bytes),
-                content_type='application/json'
-            )
+            # Simpan ke Gold
+            output_filename = f"enriched_review_{review_data['review_id']}.json"
+            json_bytes = json.dumps(output_data, indent=4).encode('utf-8')
+            MINIO_CLIENT.put_object(GOLD_BUCKET, output_filename, data=io.BytesIO(json_bytes), length=len(json_bytes), content_type='application/json')
             
-            # Optional: Delete from bronze after processing
-            client.remove_object(bronze_bucket, review_obj.object_name)
-
+            batch_data_for_training.append(prediction_input)
         except Exception as e:
-            print(f"Prediction failed for listing {listing_id}: {e}")
+            print(f"Skipping file {review_obj.object_name} due to error: {e}")
             continue
 
+    # --- 2. LATIH ULANG MODEL ---
+    if batch_data_for_training:
+        print(f"Incrementally training model with {len(batch_data_for_training)} new records...")
+        training_df = pd.concat(batch_data_for_training, ignore_index=True)
+        
+        training_df['price'] = training_df['price'].replace({r'\$': '', ',': ''}, regex=True).astype(float)
+        training_df.dropna(subset=features + ['price'], inplace=True)
+        
+        if not training_df.empty:
+            X_train = training_df[features]
+            y_train = training_df['price']
+            
+            model_pipeline.partial_fit(X_train, y_train)
+
+            updated_model_file = io.BytesIO()
+            joblib.dump(model_pipeline, updated_model_file)
+            updated_model_file.seek(0)
+            MINIO_CLIENT.put_object(
+                MODELS_BUCKET, MODEL_NAME, data=updated_model_file,
+                length=updated_model_file.getbuffer().nbytes, content_type='application/octet-stream'
+            )
+            print("Model updated successfully.")
+
+    # --- 3. BERSIHKAN BRONZE BUCKET ---
+    print("Cleaning up processed files from bronze bucket...")
+    for review_obj in raw_reviews_objects:
+        MINIO_CLIENT.remove_object(BRONZE_BUCKET, review_obj.object_name)
+    print("Cleanup complete.")
+
 if __name__ == "__main__":
-    process_and_predict()
+    main()
