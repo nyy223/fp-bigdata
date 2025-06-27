@@ -163,19 +163,15 @@ Setelah semua container aktif:
   | Location Score (0–10)   | Slider          | Penilaian lokasi (akses, keamanan, kedekatan wisata). Skor tinggi → harga naik.            |
   | Host’s Total Listings   | Numeric (±)     | Jumlah properti yang dikelola host. Lebih banyak → lebih profesional.                      |
 
-  **👤 Bagian 2: Host Details**
-  | Parameter                 | Tipe Input           | Deskripsi                                                                                  |
-  |---------------------------|----------------------|---------------------------------------------------------------------------------------------|
-  | Is the Host a Superhost?  | Radio Button (Yes/No)| Status Superhost menunjukkan host berkualitas tinggi. Meningkatkan kepercayaan & harga.    |
-  | Host Response Rate (%)    | Slider (0–100%)      | Persentase respon terhadap calon tamu. Responsif → diasumsikan lebih profesional.          |
+![image](https://github.com/user-attachments/assets/f0a9e1de-3d16-4c14-b4e1-d28c2cb334a4)
+![image](https://github.com/user-attachments/assets/2b1f3c2a-577b-4a1f-8cdf-4df52b2c2b4b)
 
-  ![image](https://github.com/user-attachments/assets/c917fd56-0811-44c0-ba4b-daeaf0e95d45)
 
   **🔘 Tombol Predict Price**
 
   Setelah semua input dimasukkan, klik tombol ini untuk mengirim data ke model ML dan mendapatkan prediksi harga sewa harian dalam USD dan IDR.
-  <img width="1337" alt="Screenshot 2025-06-19 at 20 14 46" src="https://github.com/user-attachments/assets/bc03cba6-e86e-419c-9d68-16bb72880853" />
-
+![image](https://github.com/user-attachments/assets/e5643c26-1ae3-47e5-89ec-ef5323810cf0)
+  
 - MinIO Console: `http://localhost:9001`
 > Login: minioadmin / minioadmin
 
