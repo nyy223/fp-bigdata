@@ -92,7 +92,7 @@ Mengatasi masalah penetapan harga manual yang tidak akurat dengan solusi berbasi
 ## Workflow
 ### 1. Training Model
 `src/ml_training/train_model.py`
-- Input: Listings.csv (250.000 baris pertama)
+- Input: Listings.csv (250.000 baris pertama setiap 30 detik)
 - Proses:
   - Membersihkan & mempersiapkan data listing
   - Melatih RandomForestRegressor dalam sebuah Pipeline
